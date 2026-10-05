@@ -13,11 +13,24 @@ public abstract class Entity {
     private Coordinates destinationCoordinates;
     private float movementProgress = 1f;
     private Direction direction;
+    private float movementSpeed;
 
-    protected Entity(Coordinates coordinates, Direction direction) {
+    /**
+     * @param movementSpeed сколько времени занимает переезд в соседнюю клетку
+     */
+    protected Entity(Coordinates coordinates, Direction direction, float movementSpeed) {
         this.coordinates = new Coordinates(coordinates);
         this.destinationCoordinates = new Coordinates(coordinates);
         this.direction = direction;
+        this.movementSpeed = movementSpeed;
+    }
+
+    public float getMovementSpeed() {
+        return movementSpeed;
+    }
+
+    public void setMovementSpeed(float movementSpeed) {
+        this.movementSpeed = movementSpeed;
     }
 
     public Coordinates getCoordinates() {
@@ -52,14 +65,16 @@ public abstract class Entity {
 
     /**
      * Начать движение в заданном направлении. Сущность не может начать новый переезд,
-     * пока не завершила предыдущий, — иначе она потеряла бы текущую позицию.
+     * пока не завершила предыдущий, — иначе она потеряла бы текущую позицию;
+     * в этом случае направление остаётся прежним.
      */
     public void startMovement(Direction direction) {
-        this.direction = direction;
-        if (!isMoving()) {
-            destinationCoordinates = direction.shift(coordinates);
-            movementProgress = 0f;
+        if (isMoving()) {
+            return;
         }
+        this.direction = direction;
+        destinationCoordinates = direction.shift(coordinates);
+        movementProgress = 0f;
     }
 
     /**

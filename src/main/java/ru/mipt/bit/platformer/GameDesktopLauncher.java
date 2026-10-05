@@ -13,26 +13,24 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Interpolation;
 import ru.mipt.bit.platformer.graphics.EntityGraphics;
 import ru.mipt.bit.platformer.graphics.GraphicsFactory;
+import ru.mipt.bit.platformer.input.Controls;
+import ru.mipt.bit.platformer.input.KeyboardControls;
+import ru.mipt.bit.platformer.logic.Game;
+import ru.mipt.bit.platformer.logic.Renderable;
+import ru.mipt.bit.platformer.logic.TankController;
 import ru.mipt.bit.platformer.model.Coordinates;
-import ru.mipt.bit.platformer.model.Direction;
+import ru.mipt.bit.platformer.model.MovementRules;
 import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.TreeObstacle;
+import ru.mipt.bit.platformer.tank.TankActions;
 
-import static com.badlogic.gdx.Input.Keys.A;
-import static com.badlogic.gdx.Input.Keys.D;
-import static com.badlogic.gdx.Input.Keys.DOWN;
-import static com.badlogic.gdx.Input.Keys.LEFT;
-import static com.badlogic.gdx.Input.Keys.RIGHT;
-import static com.badlogic.gdx.Input.Keys.S;
-import static com.badlogic.gdx.Input.Keys.UP;
-import static com.badlogic.gdx.Input.Keys.W;
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.createSingleLayerMapRenderer;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.getSingleLayer;
 
 public class GameDesktopLauncher implements ApplicationListener {
 
-    private static final float MOVEMENT_SPEED = 0.4f;
+    private static final float TANK_SPEED = 0.4f;
     private static final Coordinates TANK_START = new Coordinates(1, 1);
     private static final Coordinates TREE_OBSTACLE_POSITION = new Coordinates(1, 3);
 
@@ -42,11 +40,7 @@ public class GameDesktopLauncher implements ApplicationListener {
     private MapRenderer levelRenderer;
     private GraphicsFactory graphicsFactory;
 
-    private Tank tank;
-    private EntityGraphics tankGraphics;
-
-    private TreeObstacle treeObstacle;
-    private EntityGraphics treeObstacleGraphics;
+    private Game game;
 
     @Override
     public void create() {
@@ -56,14 +50,25 @@ public class GameDesktopLauncher implements ApplicationListener {
         level = new TmxMapLoader().load("level.tmx");
         levelRenderer = createSingleLayerMapRenderer(level, batch);
         TiledMapTileLayer groundLayer = getSingleLayer(level);
+
+        // собрать графику сущностей
         graphicsFactory = new GraphicsFactory(groundLayer, Interpolation.smooth);
+        EntityGraphics tankGraphics = graphicsFactory.create("images/tank_blue.png");
+        EntityGraphics treeObstacleGraphics = graphicsFactory.create("images/greenTree.png");
 
-        tank = new Tank(TANK_START);
-        tankGraphics = graphicsFactory.create("images/tank_blue.png");
+        // собрать модель уровня
+        Tank tank = new Tank(TANK_START, TANK_SPEED);
+        TreeObstacle treeObstacle = new TreeObstacle(TREE_OBSTACLE_POSITION);
+        MovementRules movementRules = new MovementRules(treeObstacle);
 
-        treeObstacle = new TreeObstacle(TREE_OBSTACLE_POSITION);
-        treeObstacleGraphics = graphicsFactory.create("images/greenTree.png");
-        treeObstacleGraphics.updatePosition(treeObstacle);
+        // подключить механики танка к действиям игрока
+        TankController tankController = new TankController(tank, movementRules, new TankActions(tank));
+        Controls controls = new KeyboardControls();
+
+        // всё, что игровой цикл будет обновлять и рисовать, — список пар «сущность + графика»
+        game = new Game(tankController, controls,
+                new Renderable(tank, tankGraphics),
+                new Renderable(treeObstacle, treeObstacleGraphics));
     }
 
     @Override
@@ -74,28 +79,7 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         // get time passed since the last render
         float deltaTime = Gdx.graphics.getDeltaTime();
-
-        // продвинуть уже начатый переезд танка
-        tank.updateMovement(deltaTime, MOVEMENT_SPEED);
-
-        // единственное место, где нажатия кнопок превращаются в намерения танка;
-        // вектор направления, поворот спрайта и запрет движения во время переезда
-        // уже описаны в модели
-        if (isPressed(UP, W) && canMove(Direction.UP)) {
-            tank.startMovement(Direction.UP);
-        }
-        if (isPressed(DOWN, S) && canMove(Direction.DOWN)) {
-            tank.startMovement(Direction.DOWN);
-        }
-        if (isPressed(LEFT, A) && canMove(Direction.LEFT)) {
-            tank.startMovement(Direction.LEFT);
-        }
-        if (isPressed(RIGHT, D) && canMove(Direction.RIGHT)) {
-            tank.startMovement(Direction.RIGHT);
-        }
-
-        // рассчитать экранные координаты танка с учётом прогресса переезда
-        tankGraphics.updatePosition(tank);
+        game.update(deltaTime);
 
         // render each tile of the level
         levelRenderer.render();
@@ -103,22 +87,10 @@ public class GameDesktopLauncher implements ApplicationListener {
         // start recording all drawing commands
         batch.begin();
 
-        // render player
-        tankGraphics.render(batch, tank.getDirection().getRotation());
-
-        // render tree obstacle
-        treeObstacleGraphics.render(batch, treeObstacle.getDirection().getRotation());
+        game.render(batch);
 
         // submit all drawing requests
         batch.end();
-    }
-
-    private static boolean isPressed(int firstKey, int secondKey) {
-        return Gdx.input.isKeyPressed(firstKey) || Gdx.input.isKeyPressed(secondKey);
-    }
-
-    private boolean canMove(Direction direction) {
-        return !tank.isMoving() && !direction.shift(tank.getCoordinates()).equals(treeObstacle.getCoordinates());
     }
 
     @Override
