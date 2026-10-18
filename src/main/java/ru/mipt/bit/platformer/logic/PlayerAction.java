@@ -23,4 +23,11 @@ public abstract class PlayerAction {
      * Выполнить действие с помощью обработчика, который его поддерживает.
      */
     public abstract void execute(ActionHandler handler);
+
+    /**
+     * Можно ли выполнить действие в текущем состоянии игры.
+     * По умолчанию действие можно выполнить всегда.
+     */
+    public boolean canBeExecuted(ru.mipt.bit.platformer.model.Tank tank, ru.mipt.bit.platformer.model.MovementRules rules) {
+        return true;}
 }
