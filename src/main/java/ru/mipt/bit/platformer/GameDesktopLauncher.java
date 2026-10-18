@@ -15,24 +15,25 @@ import ru.mipt.bit.platformer.graphics.EntityGraphics;
 import ru.mipt.bit.platformer.graphics.GraphicsFactory;
 import ru.mipt.bit.platformer.input.Controls;
 import ru.mipt.bit.platformer.input.KeyboardControls;
+import ru.mipt.bit.platformer.logic.EntityRenderable;
 import ru.mipt.bit.platformer.logic.Game;
 import ru.mipt.bit.platformer.logic.Renderable;
 import ru.mipt.bit.platformer.logic.TankController;
 import ru.mipt.bit.platformer.model.Coordinates;
 import ru.mipt.bit.platformer.model.MovementRules;
+import ru.mipt.bit.platformer.model.Obstacle;
 import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.TreeObstacle;
 import ru.mipt.bit.platformer.tank.TankActions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.createSingleLayerMapRenderer;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.getSingleLayer;
 
 public class GameDesktopLauncher implements ApplicationListener {
-
-    private static final float TANK_SPEED = 0.4f;
-    private static final Coordinates TANK_START = new Coordinates(1, 1);
-    private static final Coordinates TREE_OBSTACLE_POSITION = new Coordinates(1, 3);
 
     private Batch batch;
 
@@ -53,22 +54,33 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         // собрать графику сущностей
         graphicsFactory = new GraphicsFactory(groundLayer, Interpolation.smooth);
-        EntityGraphics tankGraphics = graphicsFactory.create("images/tank_blue.png");
-        EntityGraphics treeObstacleGraphics = graphicsFactory.create("images/greenTree.png");
 
-        // собрать модель уровня
-        Tank tank = new Tank(TANK_START, TANK_SPEED);
-        TreeObstacle treeObstacle = new TreeObstacle(TREE_OBSTACLE_POSITION);
-        MovementRules movementRules = new MovementRules(treeObstacle);
+        // 1. Модель танка из конфига
+        Tank tank = new Tank(LevelConfig.TANK_START, LevelConfig.TANK_SPEED);
+        EntityGraphics tankGraphics = graphicsFactory.create(LevelConfig.TANK_TEXTURE);
 
-        // подключить механики танка к действиям игрока
+        List<Renderable> renderables = new ArrayList<>();
+        renderables.add(new EntityRenderable(tank, tankGraphics));
+
+        // 2. Создаем деревья из конфига и складываем их в список
+        List<Obstacle> obstacles = new ArrayList<>();
+        for (Coordinates treePos : LevelConfig.TREES) {
+            TreeObstacle tree = new TreeObstacle(treePos);
+            obstacles.add(tree); // Добавляем в список для правил
+
+            EntityGraphics treeGraphics = graphicsFactory.create(LevelConfig.TREE_TEXTURE);
+            renderables.add(new EntityRenderable(tree, treeGraphics));
+        }
+
+        // 3. Передаем список препятствий в правила (используем твой конструктор)
+        MovementRules movementRules = new MovementRules(obstacles);
+
+        // 4. Подключаем механики
         TankController tankController = new TankController(tank, movementRules, new TankActions(tank));
         Controls controls = new KeyboardControls();
 
-        // всё, что игровой цикл будет обновлять и рисовать, — список пар «сущность + графика»
-        game = new Game(tankController, controls,
-                new Renderable(tank, tankGraphics),
-                new Renderable(treeObstacle, treeObstacleGraphics));
+        // 5. Создаем игру
+        game = new Game(tankController, controls, renderables);
     }
 
     @Override

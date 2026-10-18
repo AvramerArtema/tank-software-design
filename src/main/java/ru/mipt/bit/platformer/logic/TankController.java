@@ -1,7 +1,6 @@
 package ru.mipt.bit.platformer.logic;
 
 import ru.mipt.bit.platformer.input.Controls;
-import ru.mipt.bit.platformer.model.Direction;
 import ru.mipt.bit.platformer.model.MovementRules;
 import ru.mipt.bit.platformer.model.Tank;
 
@@ -15,7 +14,7 @@ import java.util.List;
  * Проверка «можно ли туда ходить» — это правило хода, а не ввод и не механика танка,
  * поэтому вынесена в {@link MovementRules}.
  */
-public class TankController {
+public class TankController implements Controller{
 
     private final Tank tank;
     private final MovementRules movementRules;
@@ -40,18 +39,12 @@ public class TankController {
      */
     public void update(Controls controls) {
         for (PlayerAction action : controls.activeActions()) {
-            if (canBeExecuted(action)) {
+            if (action.canBeExecuted(tank, movementRules)) {
                 execute(action);
             }
         }
     }
 
-    /**
-     * Ход разрешён, если танк не занят переездом и целевая клетка свободна.
-     */
-    public boolean canMove(Direction direction) {
-        return !tank.isMoving() && movementRules.canEnter(direction.shift(tank.getCoordinates()));
-    }
 
     private void execute(PlayerAction action) {
         for (ActionHandler handler : handlers) {
@@ -61,7 +54,4 @@ public class TankController {
         }
     }
 
-    private boolean canBeExecuted(PlayerAction action) {
-        return !(action instanceof Movement) || canMove(((Movement) action).getDirection());
-    }
 }

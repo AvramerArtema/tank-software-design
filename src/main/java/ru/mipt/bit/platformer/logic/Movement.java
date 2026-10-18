@@ -27,4 +27,10 @@ public final class Movement extends PlayerAction {
     public void execute(ActionHandler handler) {
         handler.move(direction);
     }
+
+    @Override
+    public boolean canBeExecuted(ru.mipt.bit.platformer.model.Tank tank, ru.mipt.bit.platformer.model.MovementRules rules) {
+        // Проверяем, что танк не движется и клетка свободна
+        return !tank.isMoving() && rules.canEnter(direction.shift(tank.getCoordinates()));
+    }
 }
