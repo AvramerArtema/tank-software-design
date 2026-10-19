@@ -32,6 +32,10 @@ import java.util.List;
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.createSingleLayerMapRenderer;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.getSingleLayer;
+import ru.mipt.bit.platformer.logic.FileLevelProvider;
+import ru.mipt.bit.platformer.logic.RandomLevelProvider;
+import ru.mipt.bit.platformer.logic.LevelProvider;
+import ru.mipt.bit.platformer.model.Level;
 
 public class GameDesktopLauncher implements ApplicationListener {
 
@@ -52,27 +56,35 @@ public class GameDesktopLauncher implements ApplicationListener {
         levelRenderer = createSingleLayerMapRenderer(level, batch);
         TiledMapTileLayer groundLayer = getSingleLayer(level);
 
-        // собрать графику сущностей
         graphicsFactory = new GraphicsFactory(groundLayer, Interpolation.smooth);
 
-        // 1. Модель танка из конфига
-        Tank tank = new Tank(LevelConfig.TANK_START, LevelConfig.TANK_SPEED);
+        // ВЫБИРАЕМ СТРАТЕГИЮ (Способ: из файла)
+         LevelProvider levelProvider = new FileLevelProvider("level.txt", 8);
+
+        // ВАРИАНТ: рандом, комментим строку выше
+        // LevelProvider levelProvider = new RandomLevelProvider(10, 8, 5);
+
+        // Получаем данные уровня от провайдера
+        Level levelData = levelProvider.provide();
+
+        // 1. Создаем танк из полученных данных
+        Tank tank = new Tank(levelData.getTankStart(), LevelConfig.TANK_SPEED);
         EntityGraphics tankGraphics = graphicsFactory.create(LevelConfig.TANK_TEXTURE);
 
         List<Renderable> renderables = new ArrayList<>();
         renderables.add(new EntityRenderable(tank, tankGraphics));
 
-        // 2. Создаем деревья из конфига и складываем их в список
+        // 2. Создаем деревья из полученных данных
         List<Obstacle> obstacles = new ArrayList<>();
-        for (Coordinates treePos : LevelConfig.TREES) {
+        for (Coordinates treePos : levelData.getTrees()) {
             TreeObstacle tree = new TreeObstacle(treePos);
-            obstacles.add(tree); // Добавляем в список для правил
+            obstacles.add(tree);
 
             EntityGraphics treeGraphics = graphicsFactory.create(LevelConfig.TREE_TEXTURE);
             renderables.add(new EntityRenderable(tree, treeGraphics));
         }
 
-        // 3. Передаем список препятствий в правила (используем твой конструктор)
+        // 3. Передаем список препятствий
         MovementRules movementRules = new MovementRules(obstacles);
 
         // 4. Подключаем механики
