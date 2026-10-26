@@ -25,6 +25,10 @@ import ru.mipt.bit.platformer.model.Obstacle;
 import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.TreeObstacle;
 import ru.mipt.bit.platformer.tank.TankActions;
+import ru.mipt.bit.platformer.logic.Controller;
+import ru.mipt.bit.platformer.logic.AIController;
+import ru.mipt.bit.platformer.logic.RandomAIStrategy;
+import ru.mipt.bit.platformer.logic.Controller;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,49 +54,63 @@ public class GameDesktopLauncher implements ApplicationListener {
     @Override
     public void create() {
         batch = new SpriteBatch();
-
-        // load level tiles
         level = new TmxMapLoader().load("level.tmx");
         levelRenderer = createSingleLayerMapRenderer(level, batch);
         TiledMapTileLayer groundLayer = getSingleLayer(level);
-
         graphicsFactory = new GraphicsFactory(groundLayer, Interpolation.smooth);
 
-        // ВЫБИРАЕМ СТРАТЕГИЮ (Способ: из файла)
-         LevelProvider levelProvider = new FileLevelProvider("level.txt", 8);
-
-        // ВАРИАНТ: рандом, комментим строку выше
-        // LevelProvider levelProvider = new RandomLevelProvider(10, 8, 5);
-
-        // Получаем данные уровня от провайдера
+        // Провайдер уровня
+        LevelProvider levelProvider = new RandomLevelProvider(10, 8, 5);
         Level levelData = levelProvider.provide();
 
-        // 1. Создаем танк из полученных данных
-        Tank tank = new Tank(levelData.getTankStart(), LevelConfig.TANK_SPEED);
-        EntityGraphics tankGraphics = graphicsFactory.create(LevelConfig.TANK_TEXTURE);
-
+        // Списки для игры
+        List<Tank> allTanks = new ArrayList<>();
         List<Renderable> renderables = new ArrayList<>();
-        renderables.add(new EntityRenderable(tank, tankGraphics));
-
-        // 2. Создаем деревья из полученных данных
+        List<Controller> controllers = new ArrayList<>();
         List<Obstacle> obstacles = new ArrayList<>();
+
+        // 1. Создаем деревья
         for (Coordinates treePos : levelData.getTrees()) {
             TreeObstacle tree = new TreeObstacle(treePos);
             obstacles.add(tree);
-
-            EntityGraphics treeGraphics = graphicsFactory.create(LevelConfig.TREE_TEXTURE);
-            renderables.add(new EntityRenderable(tree, treeGraphics));
+            EntityGraphics treeG = graphicsFactory.create(LevelConfig.TREE_TEXTURE);
+            renderables.add(new EntityRenderable(tree, treeG));
         }
 
-        // 3. Передаем список препятствий
-        MovementRules movementRules = new MovementRules(obstacles);
+        // 2. Создаем правила движения
+        MovementRules movementRules = new MovementRules(10, 8, obstacles);
 
-        // 4. Подключаем механики
-        TankController tankController = new TankController(tank, movementRules, new TankActions(tank));
+        // 3. Создаем танк игрока
+        Tank playerTank = new Tank(levelData.getTankStart(), LevelConfig.TANK_SPEED);
+        allTanks.add(playerTank);
+        EntityGraphics playerG = graphicsFactory.create(LevelConfig.TANK_TEXTURE);
+        renderables.add(new EntityRenderable(playerTank, playerG));
+
+        TankController playerController = new TankController(playerTank, movementRules, new TankActions(playerTank));
+        controllers.add(playerController);
+
+        // 4. Создаем танки ботов
+        for (Coordinates botPos : levelData.getBotStarts()) {
+            Tank botTank = new Tank(botPos, LevelConfig.TANK_SPEED);
+            allTanks.add(botTank);
+
+            // (Предполагается, что у тебя есть текстура для врага, если нет — используй ту же)
+            EntityGraphics botG = graphicsFactory.create(LevelConfig.TANK_TEXTURE);
+            renderables.add(new EntityRenderable(botTank, botG));
+
+            // Создаем AI контроллер
+            AIController botController = new AIController(
+                    botTank, movementRules, new TankActions(botTank), new RandomAIStrategy()
+            );
+            controllers.add(botController);
+        }
+
+        // 5. Отдаем список всех танков в правила для коллизий
+        movementRules.setTanks(allTanks);
+
+        // 6. Создаем игру с МАССИВОМ контроллеров
         Controls controls = new KeyboardControls();
-
-        // 5. Создаем игру
-        game = new Game(tankController, controls, renderables);
+        game = new Game(controllers, controls, renderables);
     }
 
     @Override

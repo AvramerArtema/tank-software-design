@@ -46,6 +46,6 @@ public class FileLevelProvider implements LevelProvider {
             throw new IllegalStateException("На уровне не найден танк (символ 'X')");
         }
 
-        return new Level(tankStart, trees);
+        return new Level(tankStart, new ArrayList<>(), trees);
     }
 }

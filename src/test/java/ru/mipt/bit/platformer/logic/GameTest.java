@@ -11,6 +11,8 @@ import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.TreeObstacle;
 import ru.mipt.bit.platformer.tank.TankActions;
 
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,11 +39,20 @@ class GameTest {
     }
 
     private Game newGame() {
+        // Используем конструктор с varargs для деревьев (размеры поля по умолчанию 10x8)
         MovementRules movementRules = new MovementRules(treeObstacle);
         TankController controller = new TankController(tank, movementRules, new TankActions(tank));
-        return new Game(controller, controls,
-                new Renderable(tank, tankGraphics),
-                new Renderable(treeObstacle, treeGraphics));
+
+        // Оборачиваем контроллер в список (так как Game теперь принимает List<Controller>)
+        // И используем EntityRenderable вместо Renderable
+        return new Game(
+                Arrays.asList(controller),
+                controls,
+                Arrays.asList(
+                        new EntityRenderable(tank, tankGraphics),
+                        new EntityRenderable(treeObstacle, treeGraphics)
+                )
+        );
     }
 
     @Test
@@ -100,7 +111,8 @@ class GameTest {
         TreeObstacle extraEntity = new TreeObstacle(new Coordinates(5, 5));
         Game game = newGame();
 
-        game.add(new Renderable(extraEntity, extraGraphics));
+        // Заменили Renderable на EntityRenderable
+        game.add(new EntityRenderable(extraEntity, extraGraphics));
         game.update(SPEED);
         game.render(mock(Batch.class));
 

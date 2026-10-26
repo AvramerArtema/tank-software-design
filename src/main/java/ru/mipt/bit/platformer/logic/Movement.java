@@ -1,6 +1,9 @@
 package ru.mipt.bit.platformer.logic;
 
+import ru.mipt.bit.platformer.model.Coordinates;
 import ru.mipt.bit.platformer.model.Direction;
+import ru.mipt.bit.platformer.model.MovementRules;
+import ru.mipt.bit.platformer.model.Tank;
 
 /**
  * Действие «начать движение в заданном направлении». Направление — параметр именно этого
@@ -29,8 +32,13 @@ public final class Movement extends PlayerAction {
     }
 
     @Override
-    public boolean canBeExecuted(ru.mipt.bit.platformer.model.Tank tank, ru.mipt.bit.platformer.model.MovementRules rules) {
-        // Проверяем, что танк не движется и клетка свободна
-        return !tank.isMoving() && rules.canEnter(direction.shift(tank.getCoordinates()));
+    public boolean canBeExecuted(Tank tank, MovementRules rules) {
+        if (tank.isMoving()) return false;
+
+        // Вычисляем, куда хотим поехать
+        Coordinates target = direction.shift(tank.getCoordinates());
+
+        // Спрашиваем у правил, можно ли туда
+        return rules.canEnter(target);
     }
 }

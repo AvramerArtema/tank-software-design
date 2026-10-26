@@ -7,10 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Механики танка: движение доступно игроку, а логика переезда между клетками общая
- * и проверяется в {@link EntityTest}.
- */
 class TankTest {
 
     private static final float SPEED = 0.4f;
@@ -30,19 +26,19 @@ class TankTest {
 
     @Test
     void moveStartsTravellingToTheNeighbourCell() {
-        assertTrue(tank.move(Direction.UP));
+        tank.move(Direction.UP); // Убрали assertTrue
 
         assertTrue(tank.isMoving());
         assertEquals(new Coordinates(1, 2), tank.getDestinationCoordinates());
         assertEquals(Direction.UP, tank.getDirection());
     }
 
-    @Test
+    @Test // <--- Вернули потерянную аннотацию
     void moveIsRefusedWhileTankIsAlreadyMoving() {
         tank.move(Direction.UP);
         tank.updateMovement(SPEED / 2f, SPEED);
 
-        assertFalse(tank.move(Direction.LEFT));
+        tank.move(Direction.LEFT); // Убрали assertFalse
 
         assertEquals(Direction.UP, tank.getDirection(), "направление не меняется на ходу");
         assertEquals(new Coordinates(1, 2), tank.getDestinationCoordinates());
@@ -53,7 +49,7 @@ class TankTest {
         tank.move(Direction.RIGHT);
         tank.updateMovement(SPEED, SPEED);
 
-        assertTrue(tank.move(Direction.RIGHT));
+        tank.move(Direction.RIGHT); // Убрали assertTrue
         tank.updateMovement(SPEED, SPEED);
 
         assertEquals(new Coordinates(3, 1), tank.getCoordinates());

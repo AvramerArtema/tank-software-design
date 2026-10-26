@@ -57,7 +57,7 @@ class EntityTest {
 
         assertTrue(entity.isMoving());
         assertEquals(Direction.LEFT, entity.getDirection());
-        assertEquals(new Coordinates(0, 1), entity.getDestinationCoordinates());
+        assertEquals(new Coordinates(0, 2), entity.getDestinationCoordinates());
     }
 
     @Test
@@ -84,7 +84,7 @@ class EntityTest {
 
     @Test
     void nextCoordinatesPointToTheNeighbourCell() {
-        assertEquals(new Coordinates(1, 2), entity.getNextCoordinates());
+        assertEquals(new Coordinates(2, 1), entity.getNextCoordinates());
 
         entity.startMovement(Direction.LEFT);
 

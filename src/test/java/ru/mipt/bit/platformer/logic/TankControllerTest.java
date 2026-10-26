@@ -66,19 +66,29 @@ class TankControllerTest {
     }
 
     @Test
-    void canMoveIsFalseWhenTheNeighbourCellIsTakenByTree() {
+    void moveIntoTreeIsRejected() {
         rebuildWithTreeAt(new Coordinates(2, 1));
+        controls.pressMove(Direction.RIGHT);
 
-        assertFalse(controller.canMove(Direction.RIGHT));
-        assertTrue(controller.canMove(Direction.UP), "остальные направления свободны");
+        controller.update(controls);
+
+        // Танк не должен начать движение, так как справа дерево
+        assertFalse(tank.isMoving());
+        assertEquals(TANK_START, tank.getCoordinates());
     }
 
     @Test
-    void canMoveIsFalseWhileTankIsMoving() {
+    void cannotStartNewMoveWhileTankIsMoving() {
         controls.pressMove(Direction.UP);
-        controller.update(controls);
+        controller.update(controls); // Начали ехать вверх
 
-        assertFalse(controller.canMove(Direction.RIGHT));
+        controls.releaseAll();
+        controls.pressMove(Direction.RIGHT);
+        controller.update(controls); // Пытаемся поехать вправо в процессе движения
+
+        // Направление и цель не должны измениться
+        assertEquals(new Coordinates(1, 2), tank.getDestinationCoordinates());
+        assertEquals(Direction.UP, tank.getDirection());
     }
 
     @Test
@@ -110,8 +120,8 @@ class TankControllerTest {
         controls.pressMove(Direction.RIGHT);
 
         controller.update(controls);
-        tank.updateMovement(SPEED, SPEED);
-        controller.update(controls);
+        tank.updateMovement(SPEED, SPEED); // Закончили первый шаг
+        controller.update(controls); // Начинаем второй
 
         assertEquals(new Coordinates(3, 1), tank.getDestinationCoordinates());
     }

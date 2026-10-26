@@ -25,11 +25,9 @@ public class RandomLevelProvider implements LevelProvider {
     public Level provide() {
         Set<Coordinates> occupied = new HashSet<>();
 
-        // Рандомная позиция танка
         Coordinates tankStart = new Coordinates(random.nextInt(width), random.nextInt(height));
         occupied.add(tankStart);
 
-        // Рандомные деревья
         List<Coordinates> trees = new ArrayList<>();
         while (trees.size() < treeCount) {
             Coordinates treePos = new Coordinates(random.nextInt(width), random.nextInt(height));
@@ -39,6 +37,17 @@ public class RandomLevelProvider implements LevelProvider {
             }
         }
 
-        return new Level(tankStart, trees);
+        // Генерируем 3 ботов
+        List<Coordinates> bots = new ArrayList<>();
+        int botCount = 3;
+        while (bots.size() < botCount) {
+            Coordinates botPos = new Coordinates(random.nextInt(width), random.nextInt(height));
+            if (!occupied.contains(botPos)) {
+                occupied.add(botPos);
+                bots.add(botPos);
+            }
+        }
+
+        return new Level(tankStart, bots, trees);
     }
 }

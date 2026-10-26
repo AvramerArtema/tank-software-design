@@ -13,22 +13,23 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
 /**
- * Игровой цикл работает с парой «сущность + графика» и не знает, что это за сущность.
+ * Игровой цикл работает с парой «сущность + графика».
  */
-class RenderableTest {
+class EntityRenderableTest {
 
     private static final float SPEED = 0.4f;
 
     private Tank tank;
     private EntityGraphics graphics;
-    private Renderable renderable;
+    private EntityRenderable renderable; // <-- Изменили тип на класс
 
     @BeforeEach
     void setUp() {
         tank = new Tank(new Coordinates(1, 1), SPEED);
         graphics = mock(EntityGraphics.class);
-        renderable = new Renderable(tank, graphics);
+        renderable = new EntityRenderable(tank, graphics); // <-- Создаем EntityRenderable
     }
 
     @Test

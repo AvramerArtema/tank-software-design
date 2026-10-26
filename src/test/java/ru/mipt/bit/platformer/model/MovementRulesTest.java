@@ -1,57 +1,38 @@
 package ru.mipt.bit.platformer.model;
 
 import org.junit.jupiter.api.Test;
-
+import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-class MovementRulesTest {
-
-    private static final Coordinates TREE = new Coordinates(1, 3);
+public class MovementRulesTest {
 
     @Test
-    void emptyLevelHasNoObstacles() {
-        MovementRules rules = new MovementRules();
+    public void testOutOfBounds() {
+        // Поле 10 на 8
+        MovementRules rules = new MovementRules(10, 8, Collections.emptyList());
 
-        assertFalse(rules.isBlocked(new Coordinates(0, 0)));
-        assertTrue(rules.canEnter(new Coordinates(0, 0)));
+        assertFalse(rules.canEnter(new Coordinates(10, 5))); // X за правой границей
+        assertFalse(rules.canEnter(new Coordinates(5, 8)));  // Y за верхней границей
+        assertFalse(rules.canEnter(new Coordinates(-1, 5))); // X за левой границей
+        assertTrue(rules.canEnter(new Coordinates(9, 7)));   // Внутри
     }
 
     @Test
-    void cellWithObstacleIsBlocked() {
-        MovementRules rules = new MovementRules(new TreeObstacle(TREE));
+    public void testTankCollision() {
+        MovementRules rules = new MovementRules(10, 8, Collections.emptyList());
+        Tank tank1 = new Tank(new Coordinates(2, 2), 1.0f);
+        Tank tank2 = new Tank(new Coordinates(3, 3), 1.0f);
 
-        assertTrue(rules.isBlocked(TREE));
-        assertFalse(rules.canEnter(TREE));
-    }
+        rules.setTanks(Arrays.asList(tank1, tank2));
 
-    @Test
-    void neighbouringCellStaysFree() {
-        MovementRules rules = new MovementRules(new TreeObstacle(TREE));
+        // Танк 2 стоит на (3,3), туда нельзя
+        assertFalse(rules.canEnter(new Coordinates(3, 3)));
 
-        assertFalse(rules.isBlocked(new Coordinates(1, 2)));
-        assertTrue(rules.canEnter(new Coordinates(2, 3)));
-    }
-
-    @Test
-    void obstaclesCanBeGivenAsACollection() {
-        TreeObstacle tree = new TreeObstacle(TREE);
-        MovementRules rules = new MovementRules(Collections.singletonList(tree));
-
-        assertTrue(rules.isBlocked(TREE));
-        assertTrue(rules.getObstacles().contains(tree));
-    }
-
-    @Test
-    void severalObstaclesAreAllBlocked() {
-        MovementRules rules = new MovementRules(
-                new TreeObstacle(TREE),
-                new TreeObstacle(new Coordinates(4, 5)));
-
-        assertTrue(rules.isBlocked(TREE));
-        assertTrue(rules.isBlocked(new Coordinates(4, 5)));
-        assertFalse(rules.isBlocked(new Coordinates(0, 0)));
+        // Танк 2 начал движение в (4,3). Теперь заняты и (3,3) и (4,3)
+        tank2.startMovement(Direction.RIGHT);
+        assertFalse(rules.canEnter(new Coordinates(3, 3))); // текущая клетка
+        assertFalse(rules.canEnter(new Coordinates(4, 3))); // целевая клетка
     }
 }
