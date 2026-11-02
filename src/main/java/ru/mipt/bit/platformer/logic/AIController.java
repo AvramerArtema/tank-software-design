@@ -20,16 +20,21 @@ public class AIController implements Controller {
 
     @Override
     public void update(Controls controls) {
-        // Если танк уже едет, не мешаем ему
         if (tank.isMoving()) return;
 
-        // Стратегия выбирает направление
+        // 20% шанс выстрелить вместо движения
+        if (Math.random() < 0.1) {
+            Shoot shootAction = Shoot.INSTANCE;
+
+            if (shootAction.canBeExecuted(tank, rules)) {
+                shootAction.execute(handler);
+                return; // В этом кадре только стреляем
+            }
+        }
+
+        // Иначе двигаемся как раньше
         Direction direction = strategy.chooseDirection();
-
-        // Создаем команду (паттерн Команда)
         Movement action = new Movement(direction);
-
-        // Проверяем, можно ли выполнить, и выполняем
         if (action.canBeExecuted(tank, rules)) {
             action.execute(handler);
         }

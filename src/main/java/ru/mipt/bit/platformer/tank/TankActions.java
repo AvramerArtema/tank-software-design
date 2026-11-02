@@ -1,8 +1,11 @@
 package ru.mipt.bit.platformer.tank;
 
 import ru.mipt.bit.platformer.logic.ActionHandler;
+import ru.mipt.bit.platformer.logic.GameWorld;
 import ru.mipt.bit.platformer.model.Direction;
 import ru.mipt.bit.platformer.model.Tank;
+import ru.mipt.bit.platformer.model.Coordinates;
+import ru.mipt.bit.platformer.model.Bullet;
 
 /**
  * Механики танка, доступные игроку. Класс живёт рядом с танком и знает только про него,
@@ -11,9 +14,13 @@ import ru.mipt.bit.platformer.model.Tank;
 public class TankActions implements ActionHandler {
 
     private final Tank tank;
+    private final GameWorld gameWorld;
+    private float shootCooldown = 0f; // Таймер перезарядки
+    private static final float SHOOT_DELAY = 0.5f; // Полсекунды между выстрелами
 
-    public TankActions(Tank tank) {
+    public TankActions(Tank tank, GameWorld gameWorld) {
         this.tank = tank;
+        this.gameWorld = gameWorld;
     }
 
     @Override
@@ -37,6 +44,13 @@ public class TankActions implements ActionHandler {
 
     @Override
     public void shoot() {
-        // TODO: стрельба
+        if (!tank.canShoot()) return; // Если идет перезарядка - выходим
+
+        Coordinates bulletStart = tank.getNextCoordinates();
+        Bullet bullet = new Bullet(bulletStart, tank.getDirection());
+        gameWorld.addEntity(bullet);
+
+        tank.resetShootCooldown(); // Запускаем перезарядку
     }
 }
+
