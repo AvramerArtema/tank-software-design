@@ -9,13 +9,12 @@ import com.badlogic.gdx.maps.MapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import ru.mipt.bit.platformer.model.Coordinates;
 
 import java.util.NoSuchElementException;
-
-import static com.badlogic.gdx.math.MathUtils.clamp;
 
 public final class GdxGameUtils {
 
@@ -47,25 +46,28 @@ public final class GdxGameUtils {
         }
     }
 
-    public static Rectangle moveRectangleAtTileCenter(TiledMapTileLayer tileLayer, Rectangle rectangle, GridPoint2 tileCoordinates) {
-        Vector2 tileCenter = calculateTileCenter(tileLayer, tileCoordinates);
-        return rectangle.setCenter(tileCenter);
+    public static Rectangle moveRectangleAtTileCenter(TiledMapTileLayer tileLayer, Rectangle rectangle, Coordinates tileCoordinates) {
+        return rectangle.setCenter(calculateTileCenter(tileLayer, tileCoordinates));
     }
 
-    public static GridPoint2 incrementedY(GridPoint2 point) {
-        return new GridPoint2(point).add(0, 1);
-    }
+    /**
+     * Ставит прямоугольник в точку между центрами двух клеток: при progress = 0 он в центре
+     * клетки from, при progress = 1 — в центре клетки to.
+     */
+    public static Rectangle moveRectangleBetweenTileCenters(TiledMapTileLayer tileLayer, Rectangle rectangle,
+                                                           Coordinates from, Coordinates to, float progress,
+                                                           Interpolation interpolation) {
+        moveRectangleAtTileCenter(tileLayer, rectangle, from);
+        float fromX = rectangle.x;
+        float fromY = rectangle.y;
 
-    public static GridPoint2 decrementedX(GridPoint2 point) {
-        return new GridPoint2(point).sub(1, 0);
-    }
+        moveRectangleAtTileCenter(tileLayer, rectangle, to);
+        float toX = rectangle.x;
+        float toY = rectangle.y;
 
-    public static GridPoint2 decrementedY(GridPoint2 point) {
-        return new GridPoint2(point).sub(0, 1);
-    }
-
-    public static GridPoint2 incrementedX(GridPoint2 point) {
-        return new GridPoint2(point).add(1, 0);
+        return rectangle
+                .setX(interpolation.apply(fromX, toX, progress))
+                .setY(interpolation.apply(fromY, toY, progress));
     }
 
     public static void drawTextureRegionUnscaled(Batch batch, TextureRegion region, Rectangle rectangle, float rotation) {
@@ -76,21 +78,11 @@ public final class GdxGameUtils {
         batch.draw(region, rectangle.x, rectangle.y, regionOriginX, regionOriginY, regionWidth, regionHeight, 1f, 1f, rotation);
     }
 
-    public static Rectangle createBoundingRectangle(TextureRegion region) {
-        return new Rectangle()
-                .setWidth(region.getRegionWidth())
-                .setHeight(region.getRegionHeight());
-    }
-
-    public static float continueProgress(float previousProgress, float deltaTime, float speed) {
-        return clamp(previousProgress + deltaTime / speed, 0f, 1f);
-    }
-
-    private static Vector2 calculateTileCenter(TiledMapTileLayer tileLayer, GridPoint2 tileCoordinates) {
+    private static Vector2 calculateTileCenter(TiledMapTileLayer tileLayer, Coordinates tileCoordinates) {
         int tileWidth = tileLayer.getTileWidth();
         int tileHeight = tileLayer.getTileHeight();
-        int tileBottomLeftCornerX = tileCoordinates.x * tileWidth;
-        int tileBottomLeftCornerY = tileCoordinates.y * tileHeight;
+        int tileBottomLeftCornerX = tileCoordinates.getX() * tileWidth;
+        int tileBottomLeftCornerY = tileCoordinates.getY() * tileHeight;
 
         return new Rectangle()
                 .setX(tileBottomLeftCornerX)
