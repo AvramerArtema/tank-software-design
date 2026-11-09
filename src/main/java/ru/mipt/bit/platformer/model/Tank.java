@@ -1,10 +1,11 @@
 package ru.mipt.bit.platformer.model;
+import java.util.Random;
 
 public class Tank extends Entity {
     private static final Direction DEFAULT_DIRECTION = Direction.RIGHT;
     private static final float DEFAULT_SPEED = 0.4f;
 
-    private int health = 100; // Здоровье
+    private int health; // Здоровье
     private float shootCooldown = 0f;
 
     public Tank(Coordinates coordinates) {
@@ -13,6 +14,7 @@ public class Tank extends Entity {
 
     public Tank(Coordinates coordinates, float movementSpeed) {
         super(coordinates, DEFAULT_DIRECTION, movementSpeed);
+        this.health = 80 + new Random().nextInt(21);
     }
 
     public void move(Direction direction) {

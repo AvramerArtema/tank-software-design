@@ -39,7 +39,9 @@ public class TankController implements Controller{
      */
     public void update(Controls controls) {
         for (PlayerAction action : controls.activeActions()) {
-            if (action.canBeExecuted(tank, movementRules)) {
+            if (action instanceof ToggleHealthBarsAction) {
+                ((ToggleHealthBarsAction) action).toggle();
+            } else if (action.canBeExecuted(tank, movementRules)) {
                 execute(action);
             }
         }

@@ -102,7 +102,7 @@ public class GameDesktopLauncher implements ApplicationListener {
         movementRules.setTanks(allTanks);
 
         // 9. Создаем игру
-        Controls controls = new KeyboardControls();
+        Controls controls = new KeyboardControls(graphicsManager);
         game = new Game(controllers, controls, world, graphicsManager);
     }
 

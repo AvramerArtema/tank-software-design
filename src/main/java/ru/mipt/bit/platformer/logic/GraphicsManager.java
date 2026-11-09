@@ -12,29 +12,46 @@ import java.util.Map;
 
 public class GraphicsManager implements LevelObserver {
     private final GraphicsFactory factory;
-    private final Tank playerTank; // танк игрока
+    private final Tank playerTank;
     private final Map<Entity, Renderable> renderables = new HashMap<>();
 
-    // Передаем танк игрока в конструктор
+    private boolean healthBarsEnabled = false; // <--- НОВЫЙ ФЛАГ
+
     public GraphicsManager(GraphicsFactory factory, Tank playerTank) {
         this.factory = factory;
         this.playerTank = playerTank;
     }
 
+    public void toggleHealthBars() {
+        this.healthBarsEnabled = !this.healthBarsEnabled;
+    }
+
+    public boolean isHealthBarsEnabled() {
+        return healthBarsEnabled;
+    }
+
     @Override
     public void onEntityAdded(Entity entity) {
-        String texture = "images/tank_blue.png"; // Дефолт для ботов
+        String texture = "images/tank_blue.png";
 
         if (entity instanceof TreeObstacle) {
             texture = "images/greenTree.png";
         } else if (entity instanceof Bullet) {
-            texture = "images/bullet.png"; // новая пуля
+            texture = "images/bullet.png";
         } else if (entity == playerTank) {
-            texture = "images/mytank.png"; // танк игрока
+            texture = "images/mytank.png";
         }
 
         EntityGraphics graphics = factory.create(texture);
-        renderables.put(entity, new EntityRenderable(entity, graphics));
+        Renderable baseRenderable = new EntityRenderable(entity, graphics);
+
+        // ПАТТЕРН ДЕКОРАТОР: Если это танк, оборачиваем его в декоратор
+        if (entity instanceof Tank) {
+            Tank tank = (Tank) entity;
+            renderables.put(entity, new HealthBarDecorator(baseRenderable, tank, this));
+        } else {
+            renderables.put(entity, baseRenderable);
+        }
     }
 
     @Override

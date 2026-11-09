@@ -36,7 +36,7 @@ class KeyboardControlsTest {
     @BeforeEach
     void setUp() {
         input = mock(Input.class);
-        controls = new KeyboardControls() {
+        controls = new KeyboardControls(GraphicsManager) {
             @Override
             protected Input input() {
                 return input;
