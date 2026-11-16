@@ -9,54 +9,50 @@ import ru.mipt.bit.platformer.model.Tank;
 
 import java.util.List;
 
+/**
+ * APPLICATION: Use-case (Сценарий игры).
+ * Управляет игровым циклом, но зависит только от абстракций (Портов).
+ */
 public class Game {
     private final List<Controller> controllers;
     private final Controls controls;
     private final GameWorld world;
-    private final GraphicsManager graphicsManager;
+    private final LevelRenderer renderer; // <--- ТЕПЕРЬ ЭТО ПОРТ (ИНТЕРФЕЙС)
 
-    public Game(List<Controller> controllers, Controls controls, GameWorld world, GraphicsManager graphicsManager) {
+    public Game(List<Controller> controllers, Controls controls, GameWorld world, LevelRenderer renderer) {
         this.controllers = controllers;
         this.controls = controls;
         this.world = world;
-        this.graphicsManager = graphicsManager;
+        this.renderer = renderer;
     }
 
     public void update(float deltaTime) {
-        // 1. Выполняем команды (Игрок и AI)
         for (Controller controller : controllers) {
             controller.update(controls);
         }
 
-        // 2. Тик для всех объектов (движение, коллизии)
         List<Entity> entities = world.getEntities();
         for (Entity entity : List.copyOf(entities)) {
             if (entity instanceof Bullet) {
                 Bullet bullet = (Bullet) entity;
-
-                // Двигаем пулю
                 bullet.updateMovement(deltaTime, bullet.getMovementSpeed());
 
-                // Проверяем столкновения
                 if (checkBulletCollisions(bullet)) {
-                    continue; // Если попала - удалена, идем дальше
+                    continue;
                 }
 
-                // Если пуля долетела до клетки и НЕ попала - летим дальше
                 if (!bullet.isMoving()) {
                     Coordinates nextPos = bullet.getNextCoordinates();
-                    // Проверяем, не вылетит ли за границы (поле 10x8)
                     if (nextPos.getX() < 0 || nextPos.getX() >= 10 || nextPos.getY() < 0 || nextPos.getY() >= 8) {
                         world.removeEntity(bullet);
                         continue;
                     }
-                    // Запускаем следующий шаг
                     bullet.startMovement(bullet.getDirection());
                 }
 
             } else if (entity instanceof Tank) {
                 Tank tank = (Tank) entity;
-                tank.tick(deltaTime); // Обновляем перезарядку
+                tank.tick(deltaTime);
                 tank.updateMovement(deltaTime, tank.getMovementSpeed());
                 if (tank.isDead()) {
                     world.removeEntity(tank);
@@ -64,8 +60,8 @@ public class Game {
             }
         }
 
-        // 3. Обновляем графику
-        for (Renderable r : graphicsManager.getRenderables()) {
+        // Обновляем графику через Порт
+        for (Renderable r : renderer.getRenderables()) {
             r.update(deltaTime);
         }
     }
@@ -74,7 +70,6 @@ public class Game {
         for (Entity target : world.getEntities()) {
             if (target == bullet) continue;
 
-            // Проверяем и текущую клетку цели, и клетку назначения (если танк едет)
             if (target.getCoordinates().equals(bullet.getCoordinates()) ||
                     target.getDestinationCoordinates().equals(bullet.getCoordinates())) {
 
@@ -83,15 +78,14 @@ public class Game {
                     tank.takeDamage(bullet.getDamage());
                 }
                 world.removeEntity(bullet);
-                return true; // Пуля уничтожена
+                return true;
             }
         }
-        return false; // Пуля летит дальше
+        return false;
     }
 
+    // Отрисовка тоже через Порт
     public void render(Batch batch) {
-        for (Renderable r : graphicsManager.getRenderables()) {
-            r.render(batch);
-        }
+        renderer.render(batch); // <--- Делегируем отрисовку адаптеру
     }
 }

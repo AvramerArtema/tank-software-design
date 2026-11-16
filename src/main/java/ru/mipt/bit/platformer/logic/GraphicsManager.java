@@ -1,5 +1,6 @@
 package ru.mipt.bit.platformer.logic;
 
+import com.badlogic.gdx.graphics.g2d.Batch;
 import ru.mipt.bit.platformer.graphics.EntityGraphics;
 import ru.mipt.bit.platformer.graphics.GraphicsFactory;
 import ru.mipt.bit.platformer.model.Bullet;
@@ -10,12 +11,16 @@ import ru.mipt.bit.platformer.model.TreeObstacle;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GraphicsManager implements LevelObserver {
+/**
+ * INFRASTRUCTURE: Адаптер (Adapter).
+ * Реализует порт LevelRenderer (для отрисовки) и LevelObserver (для получения событий).
+ */
+public class GraphicsManager implements LevelObserver, LevelRenderer {
     private final GraphicsFactory factory;
     private final Tank playerTank;
     private final Map<Entity, Renderable> renderables = new HashMap<>();
 
-    private boolean healthBarsEnabled = false; // <--- НОВЫЙ ФЛАГ
+    private boolean healthBarsEnabled = false;
 
     public GraphicsManager(GraphicsFactory factory, Tank playerTank) {
         this.factory = factory;
@@ -45,7 +50,6 @@ public class GraphicsManager implements LevelObserver {
         EntityGraphics graphics = factory.create(texture);
         Renderable baseRenderable = new EntityRenderable(entity, graphics);
 
-        // ПАТТЕРН ДЕКОРАТОР: Если это танк, оборачиваем его в декоратор
         if (entity instanceof Tank) {
             Tank tank = (Tank) entity;
             renderables.put(entity, new HealthBarDecorator(baseRenderable, tank, this));
@@ -59,7 +63,16 @@ public class GraphicsManager implements LevelObserver {
         renderables.remove(entity);
     }
 
+    @Override
     public Iterable<Renderable> getRenderables() {
         return renderables.values();
+    }
+
+    // НОВЫЙ МЕТОД ИЗ ИНТЕРФЕЙСА: Теперь GraphicsManager сам умеет рисовать всё, что у него есть
+    @Override
+    public void render(Batch batch) {
+        for (Renderable r : renderables.values()) {
+            r.render(batch);
+        }
     }
 }
